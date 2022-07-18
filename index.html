@@ -22,15 +22,34 @@
                 </div>
                 <div class="lower">
                     <div class="imgBx">
-                        <img src="https://t4.ftcdn.net/jpg/02/83/72/41/360_F_283724163_kIWm6DfeFN0zhm8Pc0xelROcxxbAiEFI.jpg" alt="">
+                        <img  onclick="defaultBtnActive()" src="https://t4.ftcdn.net/jpg/02/83/72/41/360_F_283724163_kIWm6DfeFN0zhm8Pc0xelROcxxbAiEFI.jpg" id="customBtn">
                     </div>
                     <div class="info">
                         <input type="text" name="Name" id="Name" placeholder="Your name....">
                         <input type="text" name="designation" id="designation" placeholder="Your designation">
+                        <input type="file" id="defaultBtn" accept="image/*">
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    <script>
+        const defaultBtn = document.querySelector("#defaultBtn");
+        const customBtn = document.querySelector("#customBtn");
+        function defaultBtnActive(){
+            defaultBtn.click();
+        }
+        defaultBtn.addEventListener('change',function(){
+            const file = this.files[0];
+            if(file){
+                const reader = new FileReader();
+                reader.onload = function(){
+                const result = reader.result;
+                customBtn.src = result;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
 </body>
 </html>
