@@ -12,17 +12,16 @@
         <nav>
             <div class="logo"></div>
             <p>Your feedback & review , important to me !</p>
-            <button type="submit">Submit</button>
+            <button type="submit" id="submitBtn">Submit</button>
         </nav>
+
+        <div class="alert alert-inactive" id="alertMsg"><h4>Thanks for review!</h4></div>
 
         <div class="testimonialBox">
             <div class="testimonialForm">
-                <div class="upper">
-                    <textarea name="tesimonialText" id="tesimonialText" cols="30" rows="10" placeholder="Write testimonial here........"></textarea>
-                </div>
                 <div class="lower">
                     <div class="imgBx">
-                        <img  onclick="defaultBtnActive()" src="https://t4.ftcdn.net/jpg/02/83/72/41/360_F_283724163_kIWm6DfeFN0zhm8Pc0xelROcxxbAiEFI.jpg" id="customBtn">
+                        <img src="https://t4.ftcdn.net/jpg/02/83/72/41/360_F_283724163_kIWm6DfeFN0zhm8Pc0xelROcxxbAiEFI.jpg" id="customBtn">
                     </div>
                     <div class="info">
                         <input type="text" name="Name" id="Name" placeholder="Your name....">
@@ -30,26 +29,178 @@
                         <input type="file" id="defaultBtn" accept="image/*">
                     </div>
                 </div>
+                <div class="upper">
+                    <textarea name="tesimonialText" id="tesimonialText" cols="30" rows="10" placeholder="Write testimonial here........"></textarea>
+                </div>
             </div>
         </div>
     </div>
     <script>
+        // const defaultBtn = document.querySelector("#defaultBtn");
+        // const customBtn = document.querySelector("#customBtn");
+        // let imgUrl;
+
+        // function defaultBtnActive(){
+        //     defaultBtn.click();
+        // }
+        // defaultBtn.addEventListener('change',function(){
+        //     const file = this.files[0];
+        //     imgUrl = file;
+        //     if(file){
+        //         const reader = new FileReader();
+        //         reader.onload = function(){
+        //         const result = reader.result;
+        //         customBtn.src = result;
+        //         imgUrl = result;
+        //         }
+        //         reader.readAsDataURL(file);
+        //     }
+        // });
+    </script>
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.9.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.9.0/firebase-analytics.js";
+        import { getStorage,ref as sRef,uploadBytesResumable,getDownloadURL } from "https://www.gstatic.com/firebasejs/9.9.0/firebase-storage.js";
+        import {getDatabase,ref,set,child,update,remove} from "https://www.gstatic.com/firebasejs/9.9.0/firebase-database.js"
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+      
+        // Your web app's Firebase configuration
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        const firebaseConfig = {
+          apiKey: "AIzaSyAbxIbMoVucNztErMah8SCXNEjha6Fe9Ps",
+          authDomain: "myportfolio-c8630.firebaseapp.com",
+          databaseURL: "https://myportfolio-c8630-default-rtdb.firebaseio.com",
+          projectId: "myportfolio-c8630",
+          storageBucket: "myportfolio-c8630.appspot.com",
+          messagingSenderId: "823860394299",
+          appId: "1:823860394299:web:5f23fc7b0a622fcd641f1e",
+          measurementId: "G-G43CWNHWXM"
+        };
+      
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getDatabase();
+
         const defaultBtn = document.querySelector("#defaultBtn");
         const customBtn = document.querySelector("#customBtn");
-        function defaultBtnActive(){
+        let imgUrl;
+
+        const name = document.getElementById("Name");
+        const designation = document.getElementById("designation");
+        const tData = document.getElementById("tesimonialText");
+        const img = document.getElementById("customBtn");
+        const submitBtn = document.getElementById("submitBtn");
+        const Alert = document.getElementById("alertMsg");
+
+        let imageURL;
+        let finalURL = "";
+        img.addEventListener('click',function(){
             defaultBtn.click();
-        }
+        })
         defaultBtn.addEventListener('change',function(){
             const file = this.files[0];
+            imageURL = file;
             if(file){
                 const reader = new FileReader();
                 reader.onload = function(){
                 const result = reader.result;
                 customBtn.src = result;
+                imgUrl = result;
                 }
                 reader.readAsDataURL(file);
             }
         });
-    </script>
+
+
+
+        submitBtn.addEventListener('click',function(){
+            showAlert("Submitting testimonial.....","#1e90ff")
+            if(!imageURL){
+                alert("Please select a image !","#000","#ffff00");
+                return;
+            }
+            const storage = getStorage();
+            const storageRef = sRef(storage,"ReviewerImages/"+new Date().getTime());
+            let uploadTask = uploadBytesResumable(storageRef,imageURL);
+            uploadTask.on('state-changed',(snapshot)=>{
+                var progress = (snapshot.bytesTransferred/snapshot.totatBytes)*100;
+                showAlert("Processing image....")
+            },(error)=>{
+                alert("Something went wrong!","#ff0000");
+            },()=>{
+                showAlert("Image uploaded Successfully !","#000","#00ff00");
+                getDownloadURL(uploadTask.snapshot.ref).then((downloadUrl)=>{
+                    //Upload Data into the DataBase
+                    //Data Validation
+                    if(name.value === ""){
+                        alert("Name is required!","#000","#FFFF00");
+                        return;
+                    }else if(designation.value === ""){
+                        alert("designation is required!","#000","#FFFF00");
+                        return;
+                    }else if(tData.value === ""){
+                        alert("Write something in testimonial!","#000","#FFFF00");
+                        return;
+                    }else if(downloadUrl === ""){
+                        alert("image not uploaded properly , try again!","#000","#FFFF00");
+                        return;
+                    }else{
+                    const date = new Date();
+                    const deviceID = name.value+" sent testimonial on : "+ date.getDate() + "|" + date.getMonth() + "|" + date.getFullYear()+ ":"+date.getTime();
+                    set(ref(db,"Testimonials/"+deviceID),{
+                        Name : name.value,
+                        designation : designation.value,
+                        testimonial : tData.value,
+                        DeviceID : deviceID,
+                        image : downloadUrl,
+                    }).then(() => {
+                    showAlert("Testimonial Submitted Successfully!\nThanks for testimonial and your valuable time.","#000","#00ff00");
+                    setTimeout(function(){
+                    hideAlert();
+                    reset();
+                    },4000) 
+                    }).catch((err) => {
+                    hideAlert();
+                    alert("Unsuccessful :(,error : "+err);
+                    });
+                }
+                })
+            })
+        });
+
+        function showAlert(msg,bgColor,textColor = "#fff"){
+            Alert.classList.remove("alert-inactive");
+            Alert.innerHTML = msg;
+            Alert.style.background = bgColor;
+            Alert.style.color = textColor;
+        }
+
+        function alert(msg,bgColor,textColor = "#fff"){
+            Alert.classList.remove("alert-inactive");
+            Alert.innerHTML = msg;
+            Alert.style.background = bgColor;
+            Alert.style.color = textColor;
+            setTimeout(function(){
+                Alert.classList.add("alert-inactive");
+            },2000)
+        }
+
+        function hideAlert(){
+            Alert.classList.add("alert-inactive");
+        }
+
+        function reset(){
+            name.value = "";
+            designation.value = "";
+            tData.value = "";
+            img.src = "https://t4.ftcdn.net/jpg/02/83/72/41/360_F_283724163_kIWm6DfeFN0zhm8Pc0xelROcxxbAiEFI.jpg";
+        }
+        // setTimeout(function(){
+        //             msg.innerHTML = "";
+        //         },5000)
+      </script>
 </body>
 </html>
