@@ -96,7 +96,7 @@
         const Alert = document.getElementById("alertMsg");
 
         let imageURL;
-        let finalURL = "";
+        let imgLoaded = false;
         img.addEventListener('click',function(){
             defaultBtn.click();
         })
@@ -121,9 +121,22 @@
             if(!imageURL){
                 alert("Please select a image !","#000","#ffff00");
                 return;
-            }
+            }else if(name.value === ""){
+                alert("Name is required!","#000","#FFFF00");
+                return;
+            }else if(designation.value === ""){
+                alert("designation is required!","#000","#FFFF00");
+                return;
+            }else if(tData.value === ""){
+                alert("Write something in testimonial!","#000","#FFFF00");
+                return;
+            }else{
             const storage = getStorage();
-            const storageRef = sRef(storage,"ReviewerImages/"+new Date().getTime());
+            let path;
+            if(imgLoaded==false){
+                path = "ReviewerImages/"+new Date().getTime();
+            }
+            const storageRef = sRef(storage,path);
             let uploadTask = uploadBytesResumable(storageRef,imageURL);
             uploadTask.on('state-changed',(snapshot)=>{
                 var progress = (snapshot.bytesTransferred/snapshot.totatBytes)*100;
@@ -135,19 +148,10 @@
                 getDownloadURL(uploadTask.snapshot.ref).then((downloadUrl)=>{
                     //Upload Data into the DataBase
                     //Data Validation
-                    if(name.value === ""){
-                        alert("Name is required!","#000","#FFFF00");
-                        return;
-                    }else if(designation.value === ""){
-                        alert("designation is required!","#000","#FFFF00");
-                        return;
-                    }else if(tData.value === ""){
-                        alert("Write something in testimonial!","#000","#FFFF00");
-                        return;
-                    }else if(downloadUrl === ""){
+                    if(downloadUrl === ""){
                         alert("image not uploaded properly , try again!","#000","#FFFF00");
                         return;
-                    }else{
+                    }
                     const date = new Date();
                     const deviceID = name.value+" sent testimonial on : "+ date.getDate() + "|" + date.getMonth() + "|" + date.getFullYear()+ ":"+date.getTime();
                     set(ref(db,"Testimonials/"+deviceID),{
@@ -166,9 +170,9 @@
                     hideAlert();
                     alert("Unsuccessful :(,error : "+err);
                     });
-                }
                 })
             })
+        }
         });
 
         function showAlert(msg,bgColor,textColor = "#fff"){
@@ -193,6 +197,7 @@
         }
 
         function reset(){
+            imgLoaded = false;
             name.value = "";
             designation.value = "";
             tData.value = "";
